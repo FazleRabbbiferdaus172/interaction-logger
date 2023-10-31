@@ -14,6 +14,7 @@ document.getElementById('startLogging').addEventListener('click', function() {
   document.getElementById('downloadJson').addEventListener('click', function() {
     chrome.storage.local.get(['interactionData'], function(result) {
       const interactions = result.interactionData || [];
+      console.log(interactions)
       const jsonContent = JSON.stringify(interactions, null, 2);
       const blob = new Blob([jsonContent], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
