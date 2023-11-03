@@ -1,4 +1,5 @@
 let interactionData = [];
+let interactionDataList = [];
 let typingTimer;
 console.log("This is a popup!")
 function captureInteraction(type, target) {
@@ -75,7 +76,8 @@ function handleKeyDown(event) {
 }
 
 function stopLogging() {
-  chrome.storage.local.set({ interactionData: interactionData });
+  interactionDataList.push(interactionData)
+  chrome.storage.local.set({ interactionData: interactionData, interactionDataList, interactionDataList });
   interactionData = [];
   document.removeEventListener('click', function(event) {
     captureInteraction('click', event.target);
@@ -121,4 +123,11 @@ function startLogging() {
       document.body.removeChild(a);
     });
     chrome.storage.local.set({ interactionData: [] });
+  }
+
+  function printLogList() {
+    chrome.storage.local.get(['interactionDataList'], function(result) {
+      const interactionDataList = result.interactionDataList || [];
+      console.log(interactionDataList)
+    });
   }

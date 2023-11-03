@@ -17,6 +17,12 @@ document.getElementById('startLogging').addEventListener('click', function() {
     });
   });
 
+  document.getElementById('printLog').addEventListener('click', function() {
+    chrome.tabs.executeScript({
+      code: 'printLogList()'
+    });
+  });
+
   function generateTourSteps(interactionData) {
     const actions = [];
     let pendingClick = null; // Track pending click event
