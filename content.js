@@ -1,7 +1,7 @@
 let interactionData = [];
 let interactionDataList = [];
 let typingTimer;
-console.log("This is a popup!")
+
 function captureInteraction(type, target) {
   interactionData.push({
     type: type,
@@ -92,7 +92,7 @@ function startLogging() {
     chrome.storage.local.set({ interactionData: [] });
     document.addEventListener('click', function(event) {
         captureInteraction('click', event.target);
-      });
+      }, {capture: true});
       
       document.addEventListener('keydown', handleKeyDown);
     console.log('started')
