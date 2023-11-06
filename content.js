@@ -1,6 +1,11 @@
 let interactionData = [];
 let interactionDataList = [];
+let startingUrl;
 let typingTimer;
+
+function injectScript() {
+  return
+}
 
 function _getUniqueSelector(element) {
   if (!(element instanceof Element)) return;
@@ -8,47 +13,35 @@ function _getUniqueSelector(element) {
   const path = [];
   let currentElement = element;
 
-  while (currentElement.parentNode) {
+  while (currentElement !== document.body) {
     let selector = currentElement.tagName.toLowerCase();
 
     if (currentElement.id) {
       selector += `#${currentElement.id}`;
       path.unshift(selector);
       break;
-    } else if (currentElement.className) {
-      selector += `.${currentElement.className.trim().replace(/\s+/g, '.')}`;
-    } else {
-      const siblings = Array.from(currentElement.parentNode.children);
-      const index = siblings.indexOf(currentElement);
-      selector += `:nth-child(${index + 1})`;
     }
 
-    if (currentElement.dataset.menuXmlid) {
-      selector += `[data-menu-xmlid="${currentElement.dataset.menuXmlid}"]`;
-      path.unshift(selector);
+    const classes = Array.from(currentElement.classList)
+      .filter((className) => className !== "focus") // Ignore .focus class
+      .join(".");
+
+    if (classes) selector += `.${classes}`;
+
+    const parent = currentElement.parentElement;
+    if (!parent) break;
+
+    const siblings = parent.children;
+    if (siblings.length > 1) {
+      let index = Array.from(siblings).indexOf(currentElement) + 1;
+      selector += `:nth-child(${index})`;
     }
 
     path.unshift(selector);
-    currentElement = currentElement.parentNode;
-
-    if (currentElement.previousElementSibling) {
-      let prevSelector = currentElement.tagName.toLowerCase();
-
-      if (currentElement.previousElementSibling.className) {
-        prevSelector += `.${currentElement.previousElementSibling.className.trim().replace(/\s+/g, '.')}`;
-      } else {
-        prevSelector += `:nth-child(${Array.from(currentElement.parentNode.children).indexOf(currentElement) + 1})`;
-      }
-
-      if (currentElement.previousElementSibling.dataset.menuXmlid) {
-        prevSelector += `[data-menu-xmlid="${currentElement.previousElementSibling.dataset.menuXmlid}"]`;
-      }
-
-      path.unshift(prevSelector);
-    }
+    currentElement = parent;
   }
 
-  return path.join(' > ');
+  return path.join(" > ");
 }
 
 function _captureInteraction(type, target) {
@@ -68,7 +61,7 @@ function _captureInteraction(type, target) {
         : [],
     },
     tagName: target.tagName,
-    uniqueSelector: uniqueSelector
+    uniqueSelector: uniqueSelector,
   });
 }
 
@@ -78,6 +71,11 @@ function _generateTourSteps(interactionData) {
   let keydownValues = []; // Track keydown values
   interactionData.forEach((item) => {
     if (item.type === "click") {
+      if (keydownValues.length > 0) {
+        const combinedKeydownValues = keydownValues.join("");
+        keydownValues = [];
+        actions[actions.length - 1].run = `text ${combinedKeydownValues}`;
+      }
       if (item.tagName === "BUTTON") {
         const editButtonClass =
           item.target.classList.includes("o_form_button_edit");
@@ -86,35 +84,44 @@ function _generateTourSteps(interactionData) {
         );
         if (editButtonClass) {
           actions.push({
-            trigger: ".o_form_button_edit",
+            trigger: item.uniqueSelector,
+            auto: true,
+            run: "click",
+            // run: `text ${combinedKeydownValues}`
+          });
+        } else {
+          actions.push({
+            trigger: item.uniqueSelector,
             auto: true,
             run: "click",
             // run: `text ${combinedKeydownValues}`
           });
         }
-      } else {
+      } else if (item.target.classList.includes("o_field_widget")) {
         const hasFieldWidgetClass =
           item.target.classList.includes("o_field_widget");
         const hasNameAttribute = item.target.attributes.some(
           (attr) => attr.name === "name"
         );
-        if (keydownValues.length > 0) {
-          const combinedKeydownValues = keydownValues.join("");
-          keydownValues = [];
-          actions[actions.length - 1].run = `text ${combinedKeydownValues}`;
-        }
         if (hasFieldWidgetClass && hasNameAttribute) {
           const triggerSelector = `.o_field_char[name='${
             item.target.attributes.find((attr) => attr.name === "name").value
           }']`;
           actions.push({
-            trigger: triggerSelector,
+            trigger: item.uniqueSelector,
             extra_trigger: ".o_td_label",
             auto: true,
             run: "click",
             // run: `text ${combinedKeydownValues}`
           });
         }
+      } else {
+        actions.push({
+          trigger: item.uniqueSelector,
+          auto: true,
+          run: "click",
+          // run: `text ${combinedKeydownValues}`
+        });
       }
     } else if ((item.type === "keydown") & (item.key !== "Backspace")) {
       keydownValues.push(item.key);
@@ -147,6 +154,7 @@ function stopLogging() {
     interactionDataList,
   });
   interactionData = [];
+  startingUrl = null;
   document.removeEventListener("click", function (event) {
     _captureInteraction("click", event.target);
   });
@@ -155,6 +163,8 @@ function stopLogging() {
 }
 
 function startLogging() {
+  const urlObject = new URL(window.location.toString());
+  startingUrl = urlObject.pathname + urlObject.search + urlObject.hash;
   chrome.storage.local.set({ interactionData: [] });
   document.addEventListener(
     "click",
@@ -174,7 +184,11 @@ function downloadLog() {
     actions = _generateTourSteps(interactions);
     let currentUrl = window.location.toString();
     const urlObject = new URL(currentUrl);
-    const pathAndQuery = urlObject.pathname + urlObject.search + urlObject.hash;
+    let pathAndQuery = urlObject.pathname + urlObject.search + urlObject.hash;
+    if (startingUrl) {
+      pathAndQuery = startingUrl;
+    }
+    console.log(startingUrl);
     tour_des = {
       url: pathAndQuery,
       sequence: 40,
@@ -194,7 +208,7 @@ function downloadLog() {
 }
 
 function printLogList() {
-  stopLogging();
+  // stopLogging();
   chrome.storage.local.get(["interactionDataList"], function (result) {
     const interactionDataList = result.interactionDataList || [];
     console.log(interactionDataList);
