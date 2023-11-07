@@ -23,6 +23,12 @@ document.getElementById('startLogging').addEventListener('click', function() {
     });
   });
 
+  document.getElementById('injectScript').addEventListener('click', function() {
+    chrome.tabs.executeScript({
+      code: 'injectScript()'
+    });
+  });
+
   function generateTourSteps(interactionData) {
     const actions = [];
     let pendingClick = null; // Track pending click event

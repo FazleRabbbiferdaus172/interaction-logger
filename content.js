@@ -3,8 +3,72 @@ let interactionDataList = [];
 let startingUrl;
 let typingTimer;
 
+console.log("Let's check I work");
+
 function injectScript() {
-  return
+  var script = document.createElement("script");
+  script.innerHTML = `
+  odoo.define('jewelry_template_product_dynamic.tour', function (require) {
+    "use strict";
+
+    var core = require('web.core');
+    var tour = require('web_tour.tour');
+
+    var _t = core._t;
+
+    tour.register('jewelry_product_template_creation_tour_dynamic', {
+            "url": "/web",
+            "sequence": 40
+        },
+        [
+            {
+                "trigger": "a#result_app_4 > div.o_app_icon:nth-child(1)",
+                "auto": true,
+                "run": "click"
+            },
+            {
+                "trigger": "header:nth-child(1) > nav.o_main_navbar > div.o_menu_sections:nth-child(3) > div.o-dropdown.dropdown.o-dropdown--no-caret:nth-child(3) > button.dropdown-toggle > span",
+                "auto": true,
+                "run": "click"
+            },
+            {
+                "trigger": "header:nth-child(1) > nav.o_main_navbar > div.o_menu_sections:nth-child(3) > div.o-dropdown.dropdown.o-dropdown--no-caret.show:nth-child(3) > div.o-dropdown--menu.dropdown-menu.d-block.o-popper-position.o-popper-position--bs:nth-child(2) > a.dropdown-item:nth-child(1)",
+                "auto": true,
+                "run": "click"
+            },
+            {
+                "trigger": "div.o_action_manager:nth-child(2) > div.o_action.o_view_controller > div.o_control_panel:nth-child(1) > div.o_cp_bottom:nth-child(2) > div.o_cp_bottom_left:nth-child(1) > div.o_cp_buttons > div > button.btn.btn-primary.o-kanban-button-new",
+                "auto": true,
+                "run": "click"
+            },
+            {
+                "trigger": "input#o_field_input_90",
+                "extra_trigger": ".o_td_label",
+                "auto": true,
+                "run": "text edcvfr"
+            },
+            {
+                "trigger": "div.o_action_manager:nth-child(2) > div.o_action.o_view_controller > div.o_content:nth-child(2) > div.o_form_view.o_xxl_form_view.o_form_editable > div.o_form_sheet_bg:nth-child(1) > div.clearfix.position-relative.o_form_sheet:nth-child(2) > div.oe_title:nth-child(4) > label.o_form_label:nth-child(1)",
+                "auto": true,
+                "run": "click"
+            },
+            {
+                "trigger": "input#o_field_input_90",
+                "extra_trigger": ".o_td_label",
+                "auto": true,
+                "run": "click"
+            },
+            {
+                "trigger": "div.o_action_manager:nth-child(2) > div.o_action.o_view_controller > div.o_control_panel:nth-child(1) > div.o_cp_bottom:nth-child(2) > div.o_cp_bottom_left:nth-child(1) > div.o_cp_buttons > div > div.o_form_buttons_edit:nth-child(2) > button.btn.btn-primary.o_form_button_save:nth-child(1)",
+                "auto": true,
+                "run": "click"
+            }
+        ]
+    );
+
+});
+`;
+  document.head.appendChild(script);
 }
 
 function _getUniqueSelector(element) {
@@ -123,6 +187,13 @@ function _generateTourSteps(interactionData) {
           // run: `text ${combinedKeydownValues}`
         });
       }
+      // if (item.uniqueSelector.includes("o_technical_modal")) {
+      //   if (actions.length) {
+      //     if (actions[actions.length - 1].trigger.includes("o_technical_modal")) {
+      //       actions[actions.length - 1].in_modal = false;
+      //     }
+      //   }
+      // }
     } else if ((item.type === "keydown") & (item.key !== "Backspace")) {
       keydownValues.push(item.key);
     }
@@ -154,7 +225,7 @@ function stopLogging() {
     interactionDataList,
   });
   interactionData = [];
-  startingUrl = null;
+  // startingUrl = null;
   document.removeEventListener("click", function (event) {
     _captureInteraction("click", event.target);
   });
