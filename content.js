@@ -71,6 +71,135 @@ function injectScript() {
   document.head.appendChild(script);
 }
 
+function simulateUserInteraction(values, text) {
+  // Simulate a click event
+  values._click(values);
+
+  // If `text` is not provided, default to "Test"
+  text = text || "Test";
+
+  if (values.consume_event === "input") {
+      // Simulate keypress event for input element
+      values.$element
+          .trigger({ type: 'keydown', key: text[text.length - 1] })
+          .val(text)
+          .trigger({ type: 'keyup', key: text[text.length - 1] });
+
+      values.$element[0].dispatchEvent(new InputEvent('input', {
+          bubbles: true,
+      }));
+  } else if (values.$element.tagName === "SELECT") {
+      // Handle select element
+      var options = values.$element.querySelectorAll("option");
+      options.forEach(option => option.selected = false);
+
+      var selectedOption = Array.from(options).find(option => option.value === text || option.innerText.trim() === text);
+
+      if (!selectedOption && /^option\s+\d+$/.test(text)) {
+          var position = parseInt(text.match(/\d+/)[0]);
+          selectedOption = options[position - 1]; // Position is 1-based, options is 0-based
+      }
+
+      if (selectedOption) {
+          selectedOption.selected = true;
+      }
+
+      // Simulate a click event for the select element
+      values._click(values);
+
+      // Trigger input event for situations where an `oninput` is defined
+      values.$element.dispatchEvent(new Event('input'));
+  } else {
+      // For other elements
+      values.$element.focus();
+      values.$element.dispatchEvent(new KeyboardEvent('keydown', { key: '_' }));
+      values.$element.textContent = text;
+      values.$element.dispatchEvent(new Event('input'));
+      values.$element.focus();
+      values.$element.dispatchEvent(new KeyboardEvent('keyup', { key: '_' }));
+  }
+
+  // Trigger a change event
+  values.$element.dispatchEvent(new Event('change'));
+}
+
+function simulateClick(values, nb, leave) {
+  triggerMouseEvent(values, "mouseover");
+  values.dispatchEvent(new Event("mouseenter"));
+
+  for (var i = 1; i <= (nb || 1); i++) {
+      triggerMouseEvent(values, "mousedown");
+      triggerMouseEvent(values, "mouseup");
+      triggerMouseEvent(values, "click", i);
+
+      if (i % 2 === 0) {
+          triggerMouseEvent(values, "dblclick");
+      }
+  }
+
+  if (leave !== false) {
+      triggerMouseEvent(values, "mouseout");
+      values.dispatchEvent(new Event("mouseleave"));
+  }
+
+  function triggerMouseEvent(element, type, count) {
+      var event = document.createEvent("MouseEvents");
+      event.initMouseEvent(type, true, true, window, count || 0, 0, 0, 0, 0, false, false, false, false, 0, element);
+      element.dispatchEvent(event);
+  }
+}
+
+async function getValueFromStorage(key) {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(key, function(result) {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve(result[key]);
+      }
+    });
+  });
+}
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function triggerEvents() {
+  console.log("Playing Steps...");
+  let intractionData = await getValueFromStorage('interactionData');
+  let events = _generateTourSteps(intractionData);
+  let currentStep = 0;
+
+  async function triggerNextStep() {
+    if (currentStep >= events.length) {
+      console.log("All steps completed");
+      return;
+    }
+
+    const event = events[currentStep];
+    const element = document.querySelector(event.trigger);
+
+    if (element) {
+      console.log(`Running step ${currentStep}...`);
+      await wait(3000);
+      simulateClick(element, 1, true);
+      currentStep++;
+      if (event.auto) {
+        await wait(3000);
+        triggerNextStep();
+      }
+    } else {
+      console.log(`Element ${event.trigger} not found for step ${currentStep}`);
+      currentStep++;
+    }
+
+    
+  }
+
+  triggerNextStep();
+}
+
 function _getUniqueSelector(element) {
   if (!(element instanceof Element)) return;
 
@@ -80,14 +209,16 @@ function _getUniqueSelector(element) {
   while (currentElement !== document.body) {
     let selector = currentElement.tagName.toLowerCase();
 
-    if (currentElement.id) {
+    if (currentElement.id & (element.tagName !== "INPUT")) {
       selector += `#${currentElement.id}`;
       path.unshift(selector);
       break;
     }
 
     const classes = Array.from(currentElement.classList)
-      .filter((className) => className !== "focus") // Ignore .focus class
+      .filter(
+        (className) => className !== "focus" && className !== "ui-state-active" && className != "ui-state-focus"
+      ) // Ignore .focus class
       .join(".");
 
     if (classes) selector += `.${classes}`;
@@ -111,7 +242,7 @@ function _getUniqueSelector(element) {
 function _captureInteraction(type, target) {
   let uniqueSelector;
   uniqueSelector = _getUniqueSelector(target);
-  console.log(uniqueSelector);
+  // console.log(uniqueSelector);
   interactionData.push({
     type: type,
     key: target.key ? target.key : false,
@@ -173,7 +304,6 @@ function _generateTourSteps(interactionData) {
           }']`;
           actions.push({
             trigger: item.uniqueSelector,
-            extra_trigger: ".o_td_label",
             auto: true,
             run: "click",
             // run: `text ${combinedKeydownValues}`
@@ -187,13 +317,15 @@ function _generateTourSteps(interactionData) {
           // run: `text ${combinedKeydownValues}`
         });
       }
-      // if (item.uniqueSelector.includes("o_technical_modal")) {
-      //   if (actions.length) {
-      //     if (actions[actions.length - 1].trigger.includes("o_technical_modal")) {
-      //       actions[actions.length - 1].in_modal = false;
-      //     }
-      //   }
-      // }
+      if (item.uniqueSelector.includes("o_technical_modal")) {
+        if (actions.length) {
+          if (
+            actions[actions.length - 1].trigger.includes("o_technical_modal")
+          ) {
+            actions[actions.length - 1].in_modal = false;
+          }
+        }
+      }
     } else if ((item.type === "keydown") & (item.key !== "Backspace")) {
       keydownValues.push(item.key);
     }
@@ -221,8 +353,7 @@ function stopLogging() {
   interactionDataList.push(interactionData);
   chrome.storage.local.set({
     interactionData: interactionData,
-    interactionDataList,
-    interactionDataList,
+    interactionDataList: interactionDataList,
   });
   interactionData = [];
   // startingUrl = null;
@@ -231,6 +362,7 @@ function stopLogging() {
   });
 
   document.removeEventListener("keydown", _handleKeyDown);
+  console.log('Stoped Recording...')
 }
 
 function startLogging() {
@@ -246,10 +378,11 @@ function startLogging() {
   );
 
   document.addEventListener("keydown", _handleKeyDown, { capture: true });
-  console.log("started");
+  console.log("Started Recording...");
 }
 
 function downloadLog() {
+  console.log("Downloading Actions...");
   chrome.storage.local.get(["interactionData"], function (result) {
     const interactions = result.interactionData || [];
     actions = _generateTourSteps(interactions);
@@ -259,7 +392,7 @@ function downloadLog() {
     if (startingUrl) {
       pathAndQuery = startingUrl;
     }
-    console.log(startingUrl);
+    // console.log(startingUrl);
     tour_des = {
       url: pathAndQuery,
       sequence: 40,

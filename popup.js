@@ -29,6 +29,12 @@ document.getElementById('startLogging').addEventListener('click', function() {
     });
   });
 
+  document.getElementById('triggerEvents').addEventListener('click', function() {
+    chrome.tabs.executeScript({
+      code: 'triggerEvents()'
+    });
+  });
+
   function generateTourSteps(interactionData) {
     const actions = [];
     let pendingClick = null; // Track pending click event
