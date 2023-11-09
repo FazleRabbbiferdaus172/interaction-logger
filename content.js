@@ -71,56 +71,68 @@ function injectScript() {
   document.head.appendChild(script);
 }
 
-function simulateUserInteraction(values, text) {
+function simulateKeypress(values, text) {
   // Simulate a click event
-  values._click(values);
+  simulateClick(values, 1, false);
 
   // If `text` is not provided, default to "Test"
   text = text || "Test";
 
-  if (values.consume_event === "input") {
-      // Simulate keypress event for input element
-      values.$element
-          .trigger({ type: 'keydown', key: text[text.length - 1] })
-          .val(text)
-          .trigger({ type: 'keyup', key: text[text.length - 1] });
+  if (true) {
+    // Simulate keypress event for input element
+    // Trigger keydown event
+    const keydownEvent = new KeyboardEvent("keydown", {
+      key: text[text.length - 1],
+    });
+    values.dispatchEvent(keydownEvent);
 
-      values.$element[0].dispatchEvent(new InputEvent('input', {
-          bubbles: true,
-      }));
-  } else if (values.$element.tagName === "SELECT") {
-      // Handle select element
-      var options = values.$element.querySelectorAll("option");
-      options.forEach(option => option.selected = false);
+    // Set value
+    values.value = text;
 
-      var selectedOption = Array.from(options).find(option => option.value === text || option.innerText.trim() === text);
+    // Trigger keyup event
+    const keyupEvent = new KeyboardEvent("keyup", {
+      key: text[text.length - 1],
+    });
+    values.dispatchEvent(keyupEvent);
 
-      if (!selectedOption && /^option\s+\d+$/.test(text)) {
-          var position = parseInt(text.match(/\d+/)[0]);
-          selectedOption = options[position - 1]; // Position is 1-based, options is 0-based
-      }
+    // Trigger input event
+    const inputEvent = new Event("input", { bubbles: true });
+    values.dispatchEvent(inputEvent);
+  }
+  // else if (values.$element.tagName === "SELECT") {
+  //     // Handle select element
+  //     var options = values.$element.querySelectorAll("option");
+  //     options.forEach(option => option.selected = false);
 
-      if (selectedOption) {
-          selectedOption.selected = true;
-      }
+  //     var selectedOption = Array.from(options).find(option => option.value === text || option.innerText.trim() === text);
 
-      // Simulate a click event for the select element
-      values._click(values);
+  //     if (!selectedOption && /^option\s+\d+$/.test(text)) {
+  //         var position = parseInt(text.match(/\d+/)[0]);
+  //         selectedOption = options[position - 1]; // Position is 1-based, options is 0-based
+  //     }
 
-      // Trigger input event for situations where an `oninput` is defined
-      values.$element.dispatchEvent(new Event('input'));
-  } else {
-      // For other elements
-      values.$element.focus();
-      values.$element.dispatchEvent(new KeyboardEvent('keydown', { key: '_' }));
-      values.$element.textContent = text;
-      values.$element.dispatchEvent(new Event('input'));
-      values.$element.focus();
-      values.$element.dispatchEvent(new KeyboardEvent('keyup', { key: '_' }));
+  //     if (selectedOption) {
+  //         selectedOption.selected = true;
+  //     }
+
+  //     // Simulate a click event for the select element
+  //     values._click(values);
+
+  //     // Trigger input event for situations where an `oninput` is defined
+  //     values.$element.dispatchEvent(new Event('input'));
+  // }
+  else {
+    // For other elements
+    values.focus();
+    values.dispatchEvent(new KeyboardEvent("keydown", { key: "_" }));
+    values.textContent = text;
+    values.dispatchEvent(new Event("input"));
+    values.focus();
+    values.dispatchEvent(new KeyboardEvent("keyup", { key: "_" }));
   }
 
   // Trigger a change event
-  values.$element.dispatchEvent(new Event('change'));
+  values.dispatchEvent(new Event("change"));
 }
 
 function simulateClick(values, nb, leave) {
@@ -128,30 +140,46 @@ function simulateClick(values, nb, leave) {
   values.dispatchEvent(new Event("mouseenter"));
 
   for (var i = 1; i <= (nb || 1); i++) {
-      triggerMouseEvent(values, "mousedown");
-      triggerMouseEvent(values, "mouseup");
-      triggerMouseEvent(values, "click", i);
+    triggerMouseEvent(values, "mousedown");
+    triggerMouseEvent(values, "mouseup");
+    triggerMouseEvent(values, "click", i);
 
-      if (i % 2 === 0) {
-          triggerMouseEvent(values, "dblclick");
-      }
+    if (i % 2 === 0) {
+      triggerMouseEvent(values, "dblclick");
+    }
   }
 
   if (leave !== false) {
-      triggerMouseEvent(values, "mouseout");
-      values.dispatchEvent(new Event("mouseleave"));
+    triggerMouseEvent(values, "mouseout");
+    values.dispatchEvent(new Event("mouseleave"));
   }
 
   function triggerMouseEvent(element, type, count) {
-      var event = document.createEvent("MouseEvents");
-      event.initMouseEvent(type, true, true, window, count || 0, 0, 0, 0, 0, false, false, false, false, 0, element);
-      element.dispatchEvent(event);
+    var event = document.createEvent("MouseEvents");
+    event.initMouseEvent(
+      type,
+      true,
+      true,
+      window,
+      count || 0,
+      0,
+      0,
+      0,
+      0,
+      false,
+      false,
+      false,
+      false,
+      0,
+      element
+    );
+    element.dispatchEvent(event);
   }
 }
 
 async function getValueFromStorage(key) {
   return new Promise((resolve, reject) => {
-    chrome.storage.local.get(key, function(result) {
+    chrome.storage.local.get(key, function (result) {
       if (chrome.runtime.lastError) {
         reject(chrome.runtime.lastError);
       } else {
@@ -162,12 +190,12 @@ async function getValueFromStorage(key) {
 }
 
 function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function triggerEvents() {
   console.log("Playing Steps...");
-  let intractionData = await getValueFromStorage('interactionData');
+  let intractionData = await getValueFromStorage("interactionData");
   let events = _generateTourSteps(intractionData);
   let currentStep = 0;
 
@@ -182,19 +210,23 @@ async function triggerEvents() {
 
     if (element) {
       console.log(`Running step ${currentStep}...`);
-      await wait(3000);
-      simulateClick(element, 1, true);
+      await wait(1000);
+      if (event.run === "click") {
+        simulateClick(element, 1, true);
+      } else if (event.run.startsWith("text")) {
+        const runAction = event.run;
+        const runActionText = runAction.split(" ")[1];
+        simulateKeypress(element, runActionText);
+      }
       currentStep++;
       if (event.auto) {
-        await wait(3000);
+        await wait(1000);
         triggerNextStep();
       }
     } else {
       console.log(`Element ${event.trigger} not found for step ${currentStep}`);
       currentStep++;
     }
-
-    
   }
 
   triggerNextStep();
@@ -217,7 +249,10 @@ function _getUniqueSelector(element) {
 
     const classes = Array.from(currentElement.classList)
       .filter(
-        (className) => className !== "focus" && className !== "ui-state-active" && className != "ui-state-focus"
+        (className) =>
+          className !== "focus" &&
+          className !== "ui-state-active" &&
+          className != "ui-state-focus"
       ) // Ignore .focus class
       .join(".");
 
@@ -362,7 +397,9 @@ function stopLogging() {
   });
 
   document.removeEventListener("keydown", _handleKeyDown);
-  console.log('Stoped Recording...')
+  const element = document.getElementsByTagName("body")[0];
+  element.classList.remove("recording_enabled");
+  console.log("Stoped Recording...");
 }
 
 function startLogging() {
@@ -378,6 +415,8 @@ function startLogging() {
   );
 
   document.addEventListener("keydown", _handleKeyDown, { capture: true });
+  const element = document.getElementsByTagName("body")[0];
+  element.classList.add("recording_enabled");
   console.log("Started Recording...");
 }
 

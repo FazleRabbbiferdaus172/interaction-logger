@@ -1,0 +1,20 @@
+@keyframes redLight {
+    0% {
+      border-color: transparent;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+    }
+    50% {
+      border-color: red;
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+    }
+    100% {
+      border-color: transparent;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+    }
+  }
+  
+  .recording_enabled {
+    border: .25px solid red;
+    animation: redLight 2s infinite;
+    animation-direction: alternate;
+  }
