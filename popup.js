@@ -23,12 +23,6 @@ document.getElementById('startLogging').addEventListener('click', function() {
     });
   });
 
-  document.getElementById('injectScript').addEventListener('click', function() {
-    chrome.tabs.executeScript({
-      code: 'injectScript()'
-    });
-  });
-
   document.getElementById('triggerEvents').addEventListener('click', function() {
     chrome.tabs.executeScript({
       code: 'triggerEvents()'
