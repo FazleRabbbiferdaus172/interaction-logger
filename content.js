@@ -4,6 +4,14 @@ let startingUrl;
 let typingTimer;
 
 
+function generatePDF() {
+  return
+}
+
+function captureSnapShot() {
+  return
+}
+
 function simulateKeypress(values, text) {
   // Simulate a click event
   simulateClick(values, 1, false);
