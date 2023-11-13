@@ -9,7 +9,12 @@ function generatePDF() {
 }
 
 function captureSnapShot() {
-  return
+  chrome.runtime.sendMessage({ action: "captureSnapshot" }, function(response) {
+    const snapshotUrl = response.snapshot;
+
+    // Now you can use the captured snapshot URL as needed
+    console.log("Snapshot URL:", snapshotUrl);
+  });
 }
 
 function simulateKeypress(values, text) {
