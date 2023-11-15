@@ -9,11 +9,14 @@ function generatePDF() {
 }
 
 function captureSnapShot() {
-  chrome.runtime.sendMessage({ action: "captureSnapshot" }, function(response) {
-    const snapshotUrl = response.snapshot;
-
-    // Now you can use the captured snapshot URL as needed
-    console.log("Snapshot URL:", snapshotUrl);
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    var tab = tabs[0];
+    chrome.tabs.captureVisibleTab(tab.windowId, { format: "png" }, function (dataUrl) {
+      // `dataUrl` contains the base64-encoded image data
+      console.log(dataUrl);
+  
+      // You can save this data or use it as needed
+    });
   });
 }
 

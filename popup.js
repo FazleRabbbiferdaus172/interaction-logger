@@ -28,3 +28,9 @@ document.getElementById("triggerEvents").addEventListener("click", function () {
     code: "triggerEvents()",
   });
 });
+
+document.getElementById("captureSnapShot").addEventListener("click", function () {
+  chrome.tabs.executeScript({
+    code: "captureSnapShot()",
+  });
+});
