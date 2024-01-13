@@ -2,6 +2,7 @@ let interactionData = [];
 let interactionDataList = [];
 let startingUrl;
 let typingTimer;
+let currentTry = 0;
 
 
 function generatePDF() {
@@ -147,10 +148,20 @@ async function triggerEvents() {
   let intractionData = await getValueFromStorage("interactionData");
   let events = _generateTourSteps(intractionData);
   let currentStep = 0;
+  const element = document.getElementsByTagName("body")[0];
+  element.classList.add("auto_play_enabled");
 
   async function triggerNextStep() {
     if (currentStep >= events.length) {
       console.log("All steps completed");
+      const element = document.getElementsByTagName("body")[0];
+      element.classList.remove("auto_play_enabled");
+      return;
+    }
+    else if (currentStep === -1) {
+      console.log("Maximux tries reached, Can not complete steps :( .");
+      const element = document.getElementsByTagName("body")[0];
+      element.classList.remove("auto_play_enabled");
       return;
     }
 
@@ -174,7 +185,16 @@ async function triggerEvents() {
       }
     } else {
       console.log(`Element ${event.trigger} not found for step ${currentStep}`);
-      currentStep++;
+      console.log(`Trying again........Try ${currentTry+1}`);
+      if (currentTry >= 3) {
+        currentTry = 0;
+        currentStep = -1;
+      }
+      else {
+        currentTry++;
+        await wait(500);
+        triggerNextStep();
+      }
     }
   }
 
