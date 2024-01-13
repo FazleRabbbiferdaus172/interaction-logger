@@ -3,7 +3,7 @@ let interactionDataList = [];
 let startingUrl;
 let typingTimer;
 let currentTry = 0;
-
+let maxTry = 3;
 
 function generatePDF() {
   return
@@ -186,7 +186,7 @@ async function triggerEvents() {
     } else {
       console.log(`Element ${event.trigger} not found for step ${currentStep}`);
       console.log(`Trying again........Try ${currentTry+1}`);
-      if (currentTry >= 3) {
+      if (currentTry >= maxTry) {
         currentTry = 0;
         currentStep = -1;
       }
