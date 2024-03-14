@@ -87,7 +87,6 @@ function simulateKeypress(values, text) {
 
 function simulateClick(values, nb, leave) {
   triggerMouseEvent(values, "mouseover");
-  values.dispatchEvent(new Event("mouseenter"));
 
   for (var i = 1; i <= (nb || 1); i++) {
     triggerMouseEvent(values, "mousedown");
@@ -105,23 +104,24 @@ function simulateClick(values, nb, leave) {
   }
 
   function triggerMouseEvent(element, type, count) {
+    const rect = element.getBoundingClientRect();
     var event = document.createEvent("MouseEvents");
     event.initMouseEvent(
-      type,
-      true,
-      true,
-      window,
-      count || 0,
-      0,
-      0,
-      0,
-      0,
-      false,
-      false,
-      false,
-      false,
-      0,
-      element
+      type=type,
+      canBubble=true,
+      cancelable=true,
+      view=window,
+      detail = count || 0,
+      screenX=rect.left + window.pageXOffset,
+      screenY=rect.top + window.pageYOffset,
+      clientX=rect.left,
+      clientY=rect.top,
+      ctrlKey=false,
+      altKey=false,
+      shiftKey=false,
+      metaKey=false,
+      button=0,
+      // relatedTarget=element
     );
     element.dispatchEvent(event);
   }
@@ -143,9 +143,17 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function triggerEvents() {
+async function triggerEvents(EventIndex) {
   console.log("Playing Steps...");
-  let intractionData = await getValueFromStorage("interactionData");
+  let intractionData;
+  if (EventIndex === undefined){
+    intractionData = await getValueFromStorage("interactionData");
+  }
+  else {
+    let intractionDataList = await getValueFromStorage("interactionDataList");
+    intractionData = intractionDataList[EventIndex-1];
+  }
+  
   let events = _generateTourSteps(intractionData);
   let currentStep = 0;
   const element = document.getElementsByTagName("body")[0];
@@ -186,9 +194,10 @@ async function triggerEvents() {
     } else {
       console.log(`Element ${event.trigger} not found for step ${currentStep}`);
       console.log(`Trying again........Try ${currentTry+1}`);
-      if (currentTry >= maxTry) {
+      if (currentTry > maxTry) {
         currentTry = 0;
         currentStep = -1;
+        triggerNextStep();
       }
       else {
         currentTry++;
@@ -389,24 +398,49 @@ function startLogging() {
   console.log("Started Recording...");
 }
 
+// following method returns a tour of current interaction data that can be pasted in tour of odoo, currently do not need this any more
+// function downloadLog() {
+//   console.log("Downloading Actions...");
+//   chrome.storage.local.get(["interactionData"], function (result) {
+//     const interactions = result.interactionData || [];
+//     actions = _generateTourSteps(interactions);
+//     let currentUrl = window.location.toString();
+//     const urlObject = new URL(currentUrl);
+//     let pathAndQuery = urlObject.pathname + urlObject.search + urlObject.hash;
+//     if (startingUrl) {
+//       pathAndQuery = startingUrl;
+//     }
+//     // console.log(startingUrl);
+//     tour_des = {
+//       url: pathAndQuery,
+//       sequence: 40,
+//     };
+//     tour = { tour_description: tour_des, steps: actions };
+//     const jsonContent = JSON.stringify(tour, null, 2);
+//     const blob = new Blob([jsonContent], { type: "application/json" });
+//     const url = URL.createObjectURL(blob);
+//     const a = document.createElement("a");
+//     a.href = url;
+//     a.download = "interaction_data.json";
+//     document.body.appendChild(a);
+//     a.click();
+//     document.body.removeChild(a);
+//   });
+//   chrome.storage.local.set({ interactionData: [] });
+// }
+
 function downloadLog() {
-  console.log("Downloading Actions...");
-  chrome.storage.local.get(["interactionData"], function (result) {
-    const interactions = result.interactionData || [];
-    actions = _generateTourSteps(interactions);
-    let currentUrl = window.location.toString();
-    const urlObject = new URL(currentUrl);
-    let pathAndQuery = urlObject.pathname + urlObject.search + urlObject.hash;
-    if (startingUrl) {
-      pathAndQuery = startingUrl;
-    }
-    // console.log(startingUrl);
-    tour_des = {
-      url: pathAndQuery,
-      sequence: 40,
-    };
-    tour = { tour_description: tour_des, steps: actions };
-    const jsonContent = JSON.stringify(tour, null, 2);
+  console.log("Downloading Interaction Data...");
+  chrome.storage.local.get(["interactionDataList", "interactionDataTitleList"], function (result) {
+    const interactionDataList = result.interactionDataList || [];
+    const interactionDataTitleList = result.interactionDataTitleList || [];
+  
+    const mappedData = interactionDataList.map((data, index) => ({
+      interactionData: data,
+      interactionDataTitle: interactionDataTitleList[index] || false
+    }));
+    
+    const jsonContent = JSON.stringify(mappedData, null, 2);
     const blob = new Blob([jsonContent], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -416,7 +450,6 @@ function downloadLog() {
     a.click();
     document.body.removeChild(a);
   });
-  chrome.storage.local.set({ interactionData: [] });
 }
 
 function printLogList() {
