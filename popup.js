@@ -63,26 +63,18 @@ document.getElementById("printLog").addEventListener("click", function () {
 
 document.getElementById("clearList").addEventListener("click", clearList);
 
-// document.getElementById("triggerEvents").addEventListener("click", triggerEventsPassToContent);
-
-// document.getElementById("captureSnapShot").addEventListener("click", function () {
-//   chrome.tabs.executeScript({
-//     code: "captureSnapShot()",
-//   });
-// });
-
-// async function getValueFromStorage(key) {
-//   return new Promise((resolve, reject) => {
-//     chrome.storage.local.get(key, function (result) {
-//       if (chrome.runtime.lastError) {
-//         reject(chrome.runtime.lastError);
-//       } else {
-//         resolve(result[key]);
-//       }
-//     });
-//   });
-// }
-
+document.getElementById('insertNew').addEventListener('click', function() {
+  var inputGroup = document.getElementById('uploadSection');
+  var toggleIconInsert = document.getElementById('toggleIconInsert');
+  if (inputGroup.style.display === 'none') {
+    inputGroup.style.display = 'flex';
+    toggleIconInsert.innerHTML = `<path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+    <path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8"/>`;
+  } else {
+    inputGroup.style.display = 'none';
+    toggleIconInsert.innerHTML = `<path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"></path>`;
+  }
+});
 
 async function triggerEventsPassToContent(ev) {
   let buttonIndex = parseInt(ev.target.parentNode.id.split('_')[1]);
@@ -113,7 +105,11 @@ function _listItemGenerator(item, index) {
   interactionButton.classList.add('btn', 'btn-outline-success');
   interactionButton.setAttribute('type', 'button');
   interactionButton.setAttribute('id', `interactionButton_${index + 1}`);
-  interactionButton.innerHTML = '<i class="bi bi-play-circle"></i>';
+  interactionButton.innerHTML = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-play-circle" viewBox="0 0 16 16">
+    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+    <path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445"/>
+  </svg>`;
   interactionButton.addEventListener('click', triggerEventsPassToContent);
   inputGroupDiv.appendChild(interactionButton);
 
@@ -133,7 +129,9 @@ function _listItemGenerator(item, index) {
   editButton.classList.add('btn', 'btn-outline-secondary');
   editButton.setAttribute('type', 'button');
   editButton.setAttribute('id', `editButton_${index + 1}`);
-  editButton.innerHTML = '<i class="bi bi-pen"></i>';
+  editButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pen" viewBox="0 0 16 16">
+  <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001m-.644.766a.5.5 0 0 0-.707 0L1.95 11.756l-.764 3.057 3.057-.764L14.44 3.854a.5.5 0 0 0 0-.708z"/>
+  </svg>`;
   editButton.addEventListener('click', function() {
     inputField.disabled = false;
     editButton.style.display = 'none';
@@ -146,7 +144,9 @@ function _listItemGenerator(item, index) {
   saveButton.setAttribute('type', 'button');
   saveButton.setAttribute('id', `saveButton_${index + 1}`);
   saveButton.style.display = 'none';
-  saveButton.innerHTML = '<i class="bi bi-check"></i>';
+  saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg" viewBox="0 0 16 16">
+  <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+</svg>`;
   saveButton.addEventListener('click', function() {
     inputField.disabled = true;
     saveButton.style.display = 'none';
@@ -172,7 +172,6 @@ function updateLocalStorage(index, value) {
 }
 
 function updateAvailableList(interactionDataList) {
-  console.log('hi updateAvailableList');
   const availableList = document.getElementById('availableList');
   availableList.innerHTML = ''; // Clear the existing list
   

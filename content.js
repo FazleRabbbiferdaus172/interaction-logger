@@ -255,7 +255,6 @@ function _getUniqueSelector(element) {
 function _captureInteraction(type, target) {
   let uniqueSelector;
   uniqueSelector = _getUniqueSelector(target);
-  // console.log(uniqueSelector);
   interactionData.push({
     type: type,
     key: target.key ? target.key : false,
@@ -397,37 +396,6 @@ function startLogging() {
   element.classList.add("recording_enabled");
   console.log("Started Recording...");
 }
-
-// following method returns a tour of current interaction data that can be pasted in tour of odoo, currently do not need this any more
-// function downloadLog() {
-//   console.log("Downloading Actions...");
-//   chrome.storage.local.get(["interactionData"], function (result) {
-//     const interactions = result.interactionData || [];
-//     actions = _generateTourSteps(interactions);
-//     let currentUrl = window.location.toString();
-//     const urlObject = new URL(currentUrl);
-//     let pathAndQuery = urlObject.pathname + urlObject.search + urlObject.hash;
-//     if (startingUrl) {
-//       pathAndQuery = startingUrl;
-//     }
-//     // console.log(startingUrl);
-//     tour_des = {
-//       url: pathAndQuery,
-//       sequence: 40,
-//     };
-//     tour = { tour_description: tour_des, steps: actions };
-//     const jsonContent = JSON.stringify(tour, null, 2);
-//     const blob = new Blob([jsonContent], { type: "application/json" });
-//     const url = URL.createObjectURL(blob);
-//     const a = document.createElement("a");
-//     a.href = url;
-//     a.download = "interaction_data.json";
-//     document.body.appendChild(a);
-//     a.click();
-//     document.body.removeChild(a);
-//   });
-//   chrome.storage.local.set({ interactionData: [] });
-// }
 
 function downloadLog() {
   console.log("Downloading Interaction Data...");
