@@ -1,0 +1,1 @@
+This is a chrome extension, navigate to "chrome://extensions" in you chrome browser then turn on the developer mode, then click the load unpacked and select the folder element_tracker and then you should see a new extension "Interaction logger". 
