@@ -5,20 +5,8 @@ let typingTimer;
 let currentTry = 0;
 let maxTry = 3;
 
-function generatePDF() {
-  return
-}
-
-function captureSnapShot() {
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    var tab = tabs[0];
-    chrome.tabs.captureVisibleTab(tab.windowId, { format: "png" }, function (dataUrl) {
-      // `dataUrl` contains the base64-encoded image data
-      console.log(dataUrl);
-  
-      // You can save this data or use it as needed
-    });
-  });
+function simulateSelection(element_selection, values_option) {
+  element_selection.value = values_option;
 }
 
 function simulateKeypress(values, text) {
@@ -186,6 +174,9 @@ async function triggerEvents(EventIndex) {
         const runActionText = runAction.split(" ")[1];
         simulateKeypress(element, runActionText);
       }
+      else if (event.run === "selection") {
+        simulateSelection(element, event.value)
+      }
       currentStep++;
       if (event.auto) {
         await wait(1000);
@@ -255,21 +246,43 @@ function _getUniqueSelector(element) {
 function _captureInteraction(type, target) {
   let uniqueSelector;
   uniqueSelector = _getUniqueSelector(target);
-  interactionData.push({
-    type: type,
-    key: target.key ? target.key : false,
-    target: {
-      classList: target.classList ? Array.from(target.classList) : [],
-      attributes: target.attributes
-        ? Array.from(target.attributes).map((attr) => ({
-            name: attr.name,
-            value: attr.value,
-          }))
-        : [],
-    },
-    tagName: target.tagName,
-    uniqueSelector: uniqueSelector,
-  });
+  if (target.tagName === 'SELECT') {
+    interactionData.push({
+      type: "selection",
+      key: target.key ? target.key : false,
+      target: {
+        classList: target.classList ? Array.from(target.classList) : [],
+        attributes: target.attributes
+          ? Array.from(target.attributes).map((attr) => ({
+              name: attr.name,
+              value: attr.value,
+            }))
+          : [],
+      },
+      tagName: target.tagName,
+      uniqueSelector: uniqueSelector,
+      value: target.value
+    });
+  }
+  else {
+    interactionData.push({
+      type: type,
+      key: target.key ? target.key : false,
+      target: {
+        classList: target.classList ? Array.from(target.classList) : [],
+        attributes: target.attributes
+          ? Array.from(target.attributes).map((attr) => ({
+              name: attr.name,
+              value: attr.value,
+            }))
+          : [],
+      },
+      tagName: target.tagName,
+      uniqueSelector: uniqueSelector,
+      value: false
+    });
+  }
+
 }
 
 function _generateTourSteps(interactionData) {
@@ -340,6 +353,15 @@ function _generateTourSteps(interactionData) {
       }
     } else if ((item.type === "keydown") & (item.key !== "Backspace")) {
       keydownValues.push(item.key);
+    }
+    else if ((item.type === "selection")) {
+      actions.push({
+        trigger: item.uniqueSelector,
+        auto: true,
+        run: "selection",
+        value: item.value
+        // run: `text ${combinedKeydownValues}`
+      });
     }
   });
   if (keydownValues.length > 0) {
