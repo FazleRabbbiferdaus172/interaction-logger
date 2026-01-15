@@ -1,1 +1,6 @@
+### Description
 A chrome extension that lets you record click and key stroke and replay the actions. primarly targeted towards odoo v15 functional test.
+
+### Usage
+
+### How to install
