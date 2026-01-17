@@ -9,3 +9,5 @@ A chrome extension that lets you record click and key stroke and replay the acti
 4. Play the recorded steps.
 
 ### How to install
+
+need migration to new version.
