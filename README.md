@@ -13,3 +13,5 @@ A chrome extension that lets you record click and key stroke and replay the acti
 need migration to new version.
 
 alternatively use the recording option in chrome dev tools. It's better.
+
+need migration
